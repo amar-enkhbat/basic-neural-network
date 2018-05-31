@@ -1,3 +1,8 @@
+# Start time
+from datetime import datetime
+startTime = datetime.now()
+
+
 ## Import modules
 import numpy as np 
 import matplotlib.pyplot as plt 
@@ -16,9 +21,25 @@ def sigmoidGradient(z):
     return sigmoid(z) * (1 - sigmoid(z))
 
 ## Load data
-iris = datasets.load_iris()
-X = iris.data[:, [0, 3]]
-y = iris.target
+import os
+import struct
+import numpy as np 
+
+def load_mnist(path, kind='train'):
+    labels_path = os.path.join(path, '%s-labels.idx1-ubyte' % kind)
+    images_path = os.path.join(path, '%s-images.idx3-ubyte' % kind)
+    with open(labels_path, 'rb') as lbpath:
+        magic, n = struct.unpack('>II', lbpath.read(8))
+        labels = np.fromfile(lbpath, dtype = np.uint8)
+
+    with open(images_path, 'rb') as imgpath:
+        magic, num, rows, cols = struct.unpack(">IIII", imgpath.read(16))
+        images = np.fromfile(imgpath, dtype = np.uint8).reshape(len(labels), 784)
+        images = ((images / 255.) - 5.) * 2
+
+    return images, labels
+
+X, y = load_mnist('', kind='train')
 
 ## Data standardization
 stdsc = StandardScaler()
@@ -29,9 +50,9 @@ X = stdsc.fit_transform(X)
 #       Input layer: 2 nodes
 #       Hidden layer: 5 nodes
 #       Output layer: 3 nodes
-input_nodes = 2
-hidden_nodes = 5
-output_nodes = 3
+input_nodes = 784
+hidden_nodes = 25
+output_nodes = 10
 
 # Number of classes
 K = np.unique(y).astype(int)
@@ -76,10 +97,10 @@ def one_hot_encoder(y):
 
 y_coded = one_hot_encoder(y)
 # Learning rate
-eta = 0.1
+eta = 1
 
 # Number of epochs
-epoch = 5000
+epoch = 100
 
 # Cost array
 cost_array = []
@@ -167,6 +188,8 @@ accuracy = np.mean((Z == y)*100)
 print("Accuracy =", str(accuracy))
 print(confusion_matrix(y, Z))
 
+print("Elapsed time:")
+print(datetime.now() - startTime)
 # Data plot
-plot_decision_regions(X, y, weight_1, weight_2)
-plt.show()
+#plot_decision_regions(X, y, weight_1, weight_2)
+#plt.show()
