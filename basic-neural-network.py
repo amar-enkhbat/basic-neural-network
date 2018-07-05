@@ -6,6 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
+import os
+import struct
 
 ## Random seed
 rgen = np.random.RandomState(1)
@@ -23,6 +25,31 @@ iris = datasets.load_iris()
 X = iris.data[:, [0, 3]]
 y = iris.target
 
+def load_mnist(path, kind='train'):
+    """Load MNIST data from `path`"""
+    labels_path = os.path.join(path, 
+                               '%s-labels.idx1-ubyte' % kind)
+    images_path = os.path.join(path, 
+                               '%s-images.idx3-ubyte' % kind)
+        
+    with open(labels_path, 'rb') as lbpath:
+        magic, n = struct.unpack('>II', 
+                                 lbpath.read(8))
+        labels = np.fromfile(lbpath, 
+                             dtype=np.uint8)
+
+    with open(images_path, 'rb') as imgpath:
+        magic, num, rows, cols = struct.unpack(">IIII", 
+                                               imgpath.read(16))
+        images = np.fromfile(imgpath, 
+                             dtype=np.uint8).reshape(len(labels), 784)
+        images = ((images / 255.) - .5) * 2
+ 
+    return images, labels
+
+X_train, y_train = load_mnist('./mnist/', kind = 'train')
+X, y = load_mnist('./mnist/', kind = 't10k')
+
 ## Data standardization
 stdsc = StandardScaler()
 X = stdsc.fit_transform(X)
@@ -33,8 +60,8 @@ X = stdsc.fit_transform(X)
 #       Hidden layer: 5 nodes
 #       Output layer: 3 nodes
 input_nodes = X.shape[1]
-hidden_nodes = 100
-output_nodes = 3
+hidden_nodes = 25
+output_nodes = len(np.unique(y))
 
 # Number of classes
 K = np.unique(y).astype(int)
@@ -79,7 +106,7 @@ def one_hot_encoder(y):
 
 y_coded = one_hot_encoder(y)
 # Learning rate
-eta = 0.01
+eta = 0.1
 
 # Number of epochs
 n_epochs = 5000
@@ -141,7 +168,7 @@ for epoch in range(n_epochs):
     
     weight_1 -= eta * weight_1_grad
     weight_2 -= eta * weight_2_grad
-    if epoch % 100 == 0:
+    if epoch % 10 == 0:
         print("Epoch: " + str(epoch) + "\tCost: ", cost)
 #    
 #    if _ > 2:
@@ -186,5 +213,5 @@ print("Accuracy =", str(accuracy))
 print(confusion_matrix(y, Z))
 
 # Data plot
-plot_decision_regions(X, y, weight_1, weight_2)
-plt.show()
+# plot_decision_regions(X, y, weight_1, weight_2)
+# plt.show()
