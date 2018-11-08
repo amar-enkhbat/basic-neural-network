@@ -8,6 +8,7 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 import os
 import struct
+import sys
 
 ## Random seed
 rgen = np.random.RandomState(1)
@@ -37,11 +38,34 @@ X, y = datasets.make_circles(n_samples=200, noise=0.05, random_state=1)
 stdsc = StandardScaler()
 # X = stdsc.fit_transform(X)
 
+def load_mnist(path, kind='train'):
+    """Load MNIST data from `path`"""
+    labels_path = os.path.join(path, 
+                               '%s-labels.idx1-ubyte' % kind)
+    images_path = os.path.join(path, 
+                               '%s-images.idx3-ubyte' % kind)
+        
+    with open(labels_path, 'rb') as lbpath:
+        magic, n = struct.unpack('>II', 
+                                 lbpath.read(8))
+        labels = np.fromfile(lbpath, 
+                             dtype=np.uint8)
+
+    with open(images_path, 'rb') as imgpath:
+        magic, num, rows, cols = struct.unpack(">IIII", 
+                                               imgpath.read(16))
+        images = np.fromfile(imgpath, 
+                             dtype=np.uint8).reshape(len(labels), 784)
+        images = ((images / 255.) - .5) * 2
+ 
+    return images, labels
+
+X, y = load_mnist('./mnist/', kind = 't10k')
 ## Neural network architecture
 #   3 layers: input layer, hidden layer, output layer
 
 input_nodes = X.shape[1]
-hidden_nodes = 10
+hidden_nodes = 100
 output_nodes = len(np.unique(y))
 
 # Number of classes
@@ -81,10 +105,10 @@ def one_hot_encoder(y):
 
 y_coded = one_hot_encoder(y)
 # Learning rate
-eta = 0.01
+eta = 0.0001
 
 # Number of epochs
-n_epochs = 10000
+n_epochs = 1000
 
 # Cost array
 cost_array = []
@@ -94,11 +118,6 @@ m = X.shape[0]
 
 # Weight decay
 cost_lambda = 0
-
-# Momentum
-alpha = 0.0001
-presentation_1 = 0
-presentation_2 = 0
 
 ## Training
 for epoch in range(n_epochs):
@@ -137,26 +156,18 @@ for epoch in range(n_epochs):
     weight_2_grad[:, 0] = cap_delta_3[:, 0]
     weight_2_grad[:, 1:] = cap_delta_3[:, 1:] + weight_2[:, 1:] * cost_lambda
     
-    if epoch == 0:
-        weight_1 -= eta * weight_1_grad
-        weight_2 -= eta * weight_2_grad
-        presentation_1 = weight_1
-        presentation_2 = weight_2
-    else:
-        weight_1 -= eta * weight_1_grad - alpha * presentation_1
-        weight_2 -= eta * weight_2_grad - alpha * presentation_2
-        presentation_1 = weight_1
-        presentation_2 = weight_2
+    weight_1 -= eta * weight_1_grad
+    weight_2 -= eta * weight_2_grad
 
-
-    if epoch % 100 == 0:
-        print("Epoch: " + str(epoch) + "\tCost: ", cost)
+    if epoch % 10 == 0:
+        sys.stderr.write("\rEpoch: %d\tCost: %f" % (epoch, cost))
+        sys.stderr.flush()
     
 #    
 #    if _ > 2:
 #        if cost_array[-2] - cost_array[-1] < 10**-4:
 #            break
-print("Elapsed time:")
+print("\nElapsed time:")
 print(datetime.now() - startTime)
 plt.plot(range(len(cost_array)), cost_array)
 plt.show()
@@ -195,5 +206,5 @@ print("Accuracy =", str(accuracy))
 print(confusion_matrix(y, Z))
 
 # Data plot
-plot_decision_regions(X, y, weight_1, weight_2)
-plt.show()
+# plot_decision_regions(X, y, weight_1, weight_2)
+# plt.show()
