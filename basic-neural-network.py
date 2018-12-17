@@ -60,7 +60,7 @@ def load_mnist(path, kind='train'):
  
     return images, labels
 
-X, y = load_mnist('./mnist/', kind = 't10k')
+# X, y = load_mnist('./mnist/', kind = 't10k')
 ## Neural network architecture
 #   3 layers: input layer, hidden layer, output layer
 
@@ -105,10 +105,10 @@ def one_hot_encoder(y):
 
 y_coded = one_hot_encoder(y)
 # Learning rate
-eta = 0.0001
+eta = 0.01
 
 # Number of epochs
-n_epochs = 1000
+n_epochs = 2000
 
 # Cost array
 cost_array = []
@@ -206,5 +206,5 @@ print("Accuracy =", str(accuracy))
 print(confusion_matrix(y, Z))
 
 # Data plot
-# plot_decision_regions(X, y, weight_1, weight_2)
-# plt.show()
+plot_decision_regions(X, y, weight_1, weight_2)
+plt.show()
